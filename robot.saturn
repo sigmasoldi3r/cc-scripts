@@ -1,0 +1,269 @@
+/*
+  This module exports an abstraction for the turtle commands.
+*/
+
+/// Simple error
+fn invalid_dir(robot) {
+  error("Invalid direction: " ++ tostring(robot.dir) ++ "! Aborting...");
+}
+
+/// Direction assertion
+fn assert_dir(dir) {
+  if dir <> "w" and dir <> "e" and dir <> "s" and dir <> "n" {
+    invalid_dir(dir);
+  }
+}
+
+/// This function generates an iterator of each one of the slots in the turtle
+/// inventory.
+let slots = (() => {
+  let SLOTS = [];
+  let i = 1;
+  loop {
+    SLOTS[i] = i;
+    if i >= 16 {
+      break;
+    }
+    i += 1;
+  }
+  return () => pairs(SLOTS);
+})();
+
+/// Robot controller
+/// An abstract wrapper to the turtle.
+class Robot {
+  fn new() {
+    return Robot {
+      pos: vector::new(0, 0, 0),
+      dir: "n",
+      safety_threshold: 10
+    };
+  }
+
+  /// Get fuel level wrapper
+  fn get_fuel(self) {
+    return turtle::getFuelLevel();
+  }
+
+  /// Get fuel limit wrapper
+  fn max_fuel(self) {
+    return turtle::getFuelLimit();
+  }
+
+  fn select(self, slot) {
+    return turtle::select(slot);
+  }
+
+  fn space_left(self, at) {
+    return turtle::getItemSpace(at);
+  }
+
+  fn total_space_left(self) {
+    let space = 0;
+    for i in slots() {
+      space += self.space_left(i);
+      if i >= 16 {
+        return space;
+      }
+    }
+  }
+
+  /// Calculates how many block the turtle should move to get to that location,
+  /// using only cartesian axes distance.
+  fn distance_to(self, pos) {
+    let dx = math::abs(self.pos.x - pos.x);
+    let dy = math::abs(self.pos.y - pos.y);
+    let dz = math::abs(self.pos.z - pos.z);
+    return dx + dy + dz;
+  }
+
+  /// A simple abstraction of distance_to(home)
+  fn distance_to_home(self) {
+    return self.distance_to(vector::new(0, 0, 0));
+  }
+
+  /// Returns true if the current location is reliable to return.
+  /// If no pos argument is passed, home is assumed.
+  fn is_reliable(self, pos) {
+    pos = pos or vector::new(0, 0, 0);
+    return self.distance_to(pos) <= (self.get_fuel() - self.safety_threshold);
+  }
+
+  /// Spins the whole inventory until it finds fuel.
+  /// @returns {number} the amount of fuel.
+  fn refuel(self) {
+    let now = self.get_fuel();
+    let bounce_back = turtle::getSelectedSlot();
+    for i in slots() {
+      self.select(i);
+      turtle::refuel();
+      if i >= 16 {
+        self.select(bounce_back);
+        return self.get_fuel() - now;
+      }
+    }
+  }
+
+  /// Dig wrapper
+  fn dig(self, dir) {
+    if dir == "up" {
+      return turtle::digUp();
+    } else if dir == "down" {
+      return turtle::digDown();
+    } else if dir == () {
+      return turtle::dig();
+    } else {
+      error("Not a valid dig direction: " ++ tostring(dir) ++ "! Aborting...");
+    }
+  }
+
+  fn up(self) {
+    if turtle::up() {
+      self.pos.z += 1;
+      return true;
+    }
+    return false;
+  }
+
+  fn down(self) {
+    if turtle::down() {
+      self.pos.z -= 1;
+      return true;
+    }
+    return false;
+  }
+
+  /// Forward wrapper
+  fn forward(self) {
+    if turtle::forward() {
+      if self.dir == "n" {
+        self.pos.y += 1;
+      } else if self.dir == "s" {
+        self.pos.y -= 1;
+      } else if self.dir == "e" {
+        self.pos.x += 1;
+      } else if self.dir == "w" {
+        self.pos.x -= 1;
+      } else {
+        invalid_dir(self);
+      }
+      return true;
+    }
+    return false;
+  }
+
+  /// Turn right wrapper
+  fn turn_right(self) {
+    turtle::turnRight();
+    if self.dir == "n" {
+      self.dir = "e";
+    } else if self.dir == "e" {
+      self.dir = "s";
+    } else if self.dir == "s" {
+      self.dir = "w";
+    } else if self.dir == "w" {
+      self.dir = "n";
+    } else {
+      invalid_dir(self);
+    }
+  }
+
+  /// Turn left wrapper
+  fn turn_left(self) {
+    turtle::turnLeft();
+    if self.dir == "n" {
+      self.dir = "w";
+    } else if self.dir == "w" {
+      self.dir = "s";
+    } else if self.dir == "s" {
+      self.dir = "e";
+    } else if self.dir == "e" {
+      self.dir = "n";
+    } else {
+      invalid_dir(self);
+    }
+  }
+
+  /// Rotates the turtle until it is facing the desired cardinal point.
+  /// @param {string} dir Valid values are w, s, e, and n
+  /// @returns {number} The amount of times the turtle rotated (0, 1, 2, 3 or 4)
+  fn rotate_to(self, dir) {
+    assert_dir(dir);
+    let rot = 0;
+    if (self.dir == "n" and dir == "w")
+      or (self.dir == "e" and dir == "n")
+      or (self.dir == "s" and dir == "e")
+      or (self.dir == "w" and dir == "s")
+    {
+      self.turn_left();
+      return -1;
+    }
+    loop {
+      if dir == self.dir {
+        return rot;
+      }
+      self.turn_right();
+      rot += 1;
+    }
+  }
+
+  fn go_home(self) {
+    self.go_to(vector::new(0, 0, 0));
+  }
+
+  fn go_to(self, pos) {
+    loop {
+      if self.pos.x <= pos.x {
+        break;
+      }
+      self.rotate_to("w");
+      self.forward();
+    }
+    loop {
+      if self.pos.x >= pos.x {
+        break;
+      }
+      self.rotate_to("e");
+      self.forward();
+    }
+    loop {
+      if self.pos.y <= pos.y {
+        break;
+      }
+      self.rotate_to("s");
+      self.forward();
+    }
+    loop {
+      if self.pos.y >= pos.y {
+        break;
+      }
+      self.rotate_to("n");
+      self.forward();
+    }
+    loop {
+      if self.pos.z <= pos.z {
+        break;
+      }
+      self.down();
+    }
+    loop {
+      if self.pos.z >= pos.z {
+        break;
+      }
+      self.up();
+    }
+  }
+
+  fn drop(self, count) {
+    return turtle::drop(count);
+  }
+
+  fn drop_all(self) {
+    for i in slots() {
+      self.select(i);
+      self.drop();
+    }
+  }
+}
+
+return Robot;
