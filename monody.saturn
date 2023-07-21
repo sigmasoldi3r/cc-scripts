@@ -1,0 +1,243 @@
+/*
+  Monody is a simple library that has algebraic and atomic types, like
+  Option, or Result.
+*/
+
+fn monody_pairs(iterable) {
+  let next = pairs(iterable);
+  return table::unpack([
+    (t, kv) => {
+      let key = next(t, kv <> () and kv._0 or ());
+      if key == () {
+        return ();
+      }
+      return (key, t[key]);
+    },
+    iterable,
+    ()
+  ]);
+}
+
+/// Collects the stacktrace of the running caller.
+fn collect_stack() {
+  let stack = [];
+  let i = 1;
+  loop {
+    let info = debug::getinfo(i,'S');
+    if info == () {
+      break;
+    }
+    stack[i] = info.source;
+    i += 1;
+  }
+  return stack;
+}
+
+fn panic(message) {
+  print("PANIC! " ++ tostring(message ?? ""));
+  for pair in monody_pairs(collect_stack()) {
+    if pair <> () {
+      let (_, value) = pair;
+      print("at " ++ value);
+    }
+  }
+  error();
+}
+
+class Result {
+  fn ok(value) {
+    return Result { value, ok: true };
+  }
+  fn err(err) {
+    return Result { err, ok: false };
+  }
+  fn map(self, mapper) {
+    if self.ok {
+      return Result::ok(mapper(self.value));
+    } else {
+      return self;
+    }
+  }
+  fn unwrap(self) {
+    if self.ok {
+      return self.value;
+    }
+    panic('Unwrap result error: ' ++ tostring(self.err));
+  }
+  fn unwrap_err(self) {
+    if not self.ok {
+      return self.err;
+    }
+    panic('Unwrap err result error: result is OK!');
+  }
+  fn unwrap_or(self, alternative) {
+    if self.ok {
+      return self.value;
+    }
+    return alternative;
+  }
+  fn expect(self, message) {
+    if self.ok {
+      return self.value;
+    }
+    panic('Expected result value: ' ++ tostring(message));
+  }
+  fn to_iter(self) {
+    if self.ok {
+      let out = {};
+      out[self.value] = self.value;
+      return pairs(out);
+    }
+    return pairs({});
+  }
+}
+
+class Option {
+  fn some(value) {
+    return Option { value, some: true };
+  }
+  fn none() {
+    return Option { some: false };
+  }
+  fn map(self, mapper) {
+    if self.some {
+      return Option::some(mapper(self.value));
+    } else {
+      return self;
+    }
+  }
+  fn unwrap(self) {
+    if self.some {
+      return self.value;
+    }
+    panic('Attempting to unwrap empty option');
+  }
+  fn unwrap_or(self, alternative) {
+    if self.some {
+      return self.value;
+    }
+    return alternative;
+  }
+  fn expect(self, message) {
+    if self.some {
+      return self.value;
+    }
+    panic('Expected option value: ' ++ tostring(message));
+  }
+  fn to_iter(self) {
+    if self.some {
+      let out = {};
+      out[self.value] = self.value;
+      return pairs(out);
+    }
+    return pairs({});
+  }
+}
+
+let const = value => () => value;
+let identity = a => a;
+
+/// LUA SHIM
+/// Captures multireturn as a tuple
+fn capture() {
+  let tup = {};
+  for key in pairs(argv) {
+    tup["_" ++ (key - 1)] = argv[key];
+  }
+  return tup;
+}
+
+/// Inject the function references from the source class into the target class.
+fn mixin(source) {
+  return (target, name) => {
+    let root_index = target.prototype.__meta__.__index;
+    target.prototype.super = target.prototype.super ?? {};
+    target.prototype.super[source] = source.prototype;
+    target.prototype.__meta__.__index = (t, key) => {
+      if type(root_index) == "function" {
+        return root_index(t, key, table::unpack(argv));
+      }
+      if root_index[key] <> () {
+        return root_index[key];
+      }
+      return source.prototype[key];
+    };
+  };
+}
+
+fn trait() {
+  return (target, trait) => {
+    target.__meta__.__call = () => panic("Cannot construct a trait class: " ++ trait ++ " is marked as a trait class!");
+  };
+}
+
+fn abstract() {
+  return (target, field, name) => {
+    target.prototype[field] = () => {
+      error("Attempting to call abstract method " ++ name ++ "::" ++ field);
+    };
+  };
+}
+
+/// This find function is curried, in order to be used
+/// with the arrow right operator, like: `[1, 2, 3] -> find(i => i == 2)`.
+///
+/// You can skip the partial application, if desired, by supplying the array
+/// element as second value, like `find(i => i == 2, [1, 2, 3])`.
+fn find(test, tbl) {
+  if tbl <> () {
+    for k in pairs(tbl) {
+      if test(tbl[k], k) {
+        return k;
+      }
+    }
+    return ();
+  }
+  return tbl => {
+    for k in pairs(tbl) {
+      if test(tbl[k], k) {
+        return k;
+      }
+    }
+  };
+}
+
+/// Application operator.
+fn __arrow_right(left, right) {
+  return right(left);
+}
+
+fn param(name, test) {
+  return (target, field, _, args) => {
+    let original = target.prototype.field;
+    let i = args -> find(field => name == field);
+    if i == () {
+      error("No field named '" ++ name ++ "' found!");
+    }
+    target.prototype.field = self => {
+      if not test(argv[i]) {
+        error("Runtime check failed: argument '" ++ field ++ "' has an invalid type!");
+      }
+      return target.prototype::field(self, table::unpack(argv));
+    };
+  };
+}
+
+fn is_string(value) {
+  return type(value) == "string";
+}
+
+fn is_number(value) {
+  return type(value) == "number";
+}
+
+fn is_object(value) {
+  return type(value) == "table";
+}
+
+return {
+  panic, Result, Option, const, identity, capture,
+  pairs: monody_pairs,
+  trait, mixin, abstract, param, is_string, is_number, is_object,
+  collect_stack, __arrow_right, find
+};
