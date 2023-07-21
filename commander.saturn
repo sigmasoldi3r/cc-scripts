@@ -1,0 +1,120 @@
+let { panic, Result } = require('monody');
+
+class Commander {
+  fn new() {
+    return Commander {
+      options: {
+        long: {},
+        short: {},
+        required: {}
+      },
+      args: [],
+      name: (),
+      description: ()
+    };
+  }
+  fn option(self, option) {
+    if option.short <> () and option.short.len() > 1 {
+      panic("Option -" ++ option.short ++ " is not a valid short flag");
+    }
+    if option.short <> () and option.long == () {
+      panic("Option -" ++ option.short ++ " needs long parameter");
+    }
+    if option.long <> () {
+      self.options.long[option.long] = option;
+    }
+    if option.short <> () {
+      self.options.short[option.short] = option;
+    }
+    if option.required <> () {
+      self.options.required[option.long] = option;
+    }
+    return self;
+  }
+  fn description(self, description) {
+    self.description = description;
+    return self;
+  }
+  fn name(self, name) {
+    self.name = name;
+    return self;
+  }
+  fn version(self, version) {
+    self.version = version;
+    return self;
+  }
+  fn argument(self, argument) {
+    if argument.name == () {
+      argument.name = "arg" ++ #? args;
+    }
+    self.args[#?self.args+1] = argument;
+    return self;
+  }
+  fn parse(self, args) {
+    let result = {
+      options: {},
+      arguments: []
+    };
+    for pair in m::pairs(args) {
+      if pair._1.find("%-") {
+        let root = pair._1.match("%-%-?(.+)");
+        let value = true;
+        let vp = m::capture(root.match("(.-)%s*=%s*(.+)"));
+        if vp._0 <> () {
+          value = vp._1;
+          root = vp._0;
+        }
+        if self.options.short[root] <> () {
+          let info = self.options.short[root];
+          result.options[info.long] = value;
+        } else if self.options.long[root] <> () {
+          let info = self.options.long[root];
+          result.options[info.long] = value;
+        } else {
+          return Result::err("Unknown parameter: " ++ root);
+        }
+      } else {
+        result.arguments[#?result.arguments+1] = pair._1;
+      }
+    }
+    for pair in m::pairs(self.options.required) {
+      if result.options[pair._0] == () {
+        return Result::err("missing mandatory parameter: " ++ pair._0);
+      }
+    }
+    return Result::ok(result);
+  }
+  fn show_help(self) {
+    if self.name <> () {
+      write(self.name ++ " ");
+    }
+    if self.version <> () {
+      write("v" ++ self.version);
+    }
+    if self.version <> () or self.name <> () {
+      print();
+    }
+    if self.description <> () {
+      print(" " ++ self.description);
+    }
+    print();
+    write("  Usage " ++ (self.name or "<command>"));
+    for pairs in m::pairs(self.options.required) {
+      write(" --" ++ pairs._1.long);
+    }
+    write(" [options] [arguments]");
+    print();
+    for pairs in m::pairs(self.options.long) {
+      write("     --" ++ pairs._1.long);
+      if pairs._1.short <> () {
+        write(", -" ++ pairs._1.short);
+      }
+      if pairs._1.description <> () {
+        write(" " ++ pairs._1.description);
+      }
+      print();
+    }
+  }
+}
+
+return Commander;
