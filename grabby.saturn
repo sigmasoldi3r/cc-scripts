@@ -1,0 +1,86 @@
+let { trait, mixin, abstract, param, is_string } = require('monody');
+
+@trait()
+class Solver {
+  fn resolve(self, source) {
+    if self.cache[source] <> () {
+      return self.cache[source];
+    }
+    let url = self.resolve_url(source);
+    let src = http::get(url)::readAll();
+    let mod = load(src, source, "bt", { require });
+    self.cache[source] = mod();
+    return self.cache[source];
+  }
+  @abstract() fn resolve_url(self, source) {}
+  @abstract() fn is_valid(self, source) {}
+}
+
+@mixin(Solver)
+class HttpSolver {
+  fn new() {
+    return HttpSolver { cache: {} };
+  }
+  @param("source", is_string)
+  fn is_valid(self, source) {
+    return source.find("^https?://") <> ();
+  }
+  @param("source", is_string)
+  fn resolve_url(self, source) {
+    return source;
+  }
+}
+
+@mixin(Solver)
+class GithubSolver {
+  fn new() {
+    return GithubSolver { cache: {} };
+  }
+  @param("source", is_string)
+  fn is_valid(self, source) {
+    return source.find("^github:") <> ();
+  }
+  @param("source", is_string)
+  fn resolve_url(self, source) {
+    let [_, segment] = [source.match("^github:(.+)")];
+    return "https://raw.githubusercontent.com/" ++ segment;
+  }
+}
+
+@mixin(Solver)
+class PastebinSolver {
+  fn new() {
+    return PastebinSolver { cache: {} };
+  }
+  @param("source", is_string)
+  fn is_valid(self, source) {
+    return source.find("^pastebin:") <> ();
+  }
+  @param("source", is_string)
+  fn resolve_url(self, source) {
+    let [_, segment] = [source.match("^pastebin:(.+)")];
+    return "https://pastebin.com/raw/" ++ segment;
+  }
+}
+
+let http_solver = HttpSolver::new();
+let github_solver = GithubSolver::new();
+let pastebin_solver = PastebinSolver::new();
+
+/// Grabs the library, without any hassle.
+///
+/// Will try to resolve the imported module, depending on the
+/// provided schema.
+fn grab(source) {
+  if http_solver.is_valid(source) {
+    return http_solver.resolve(source);
+  } else if github_solver.is_valid(source) {
+    return github_solver.resolve(source);
+  } else if pastebin_solver.is_valid(source) {
+    return pastebin_solver.resolve(source);
+  } else {
+    return require(source);
+  }
+}
+
+return { grab };
