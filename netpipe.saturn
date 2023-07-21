@@ -1,0 +1,157 @@
+let { Result, panic } = require("monody");
+
+/// Acts as a send-receive message gateway.
+/// JTTP stands for Json Text Transfer Protocol
+class Jttp {
+  fn new(protocol) {
+    if not rednet::isOpen() {
+      panic("No open modems! use Jttp::open(<proto>, [modem])");
+    }
+    return Jttp { protocol };
+  }
+  fn open(protocol, modem) {
+    if modem == () {
+      peripheral::find("modem", rednet.open);
+    }
+    return Jttp::new(protocol);
+  }
+  fn send(self, target, message) {
+    return rednet::send(
+      target,
+      textutils::serializeJSON(message),
+      self.protocol
+    );
+  }
+  fn receive(self, timeout) {
+    let [_, host, raw] = [rednet::receive(self.protocol.name, timeout)];
+    if not host {
+      return Result::err("timeout");
+    }
+    let [_, message, err] = [textutils::unserializeJSON(raw)];
+    if message == () {
+      return Result::err("parse error: " ++ textutils::serializeJSON(err));
+    }
+    return Result::ok({ host, message });
+  }
+  fn query(self, target, message, timeout) {
+    self.send(target, message);
+    return self.receive(timeout);
+  }
+  fn host(self, name) {
+    return rednet::host(self.protocol, name);
+  }
+}
+
+/// True network pipes, they represent a live connection
+/// between two machines.
+///
+/// Sockets must have the same protocol. You must host a
+/// socket server and use a client to connect.
+class Socket {
+  fn new(protocol, timeout, side) {
+    timeout = timeout ?? 1000;
+    let jttp = Jttp::open(protocol, side);
+    return Socket { protocol, jttp, timeout, closed: false, connected: false };
+  }
+
+  /// Connects the socket, starts the loop.
+  fn connect(self, host) {
+    self.host = host;
+    self.connected = true;
+    self.write({ __ack__: true });
+    let { ok, value, err } = self.jttp.receive(());
+    if not ok {
+      self.connected = false;
+      self.closed = true;
+      self.on_close(err);
+      self.on_error(err);
+      return err;
+    }
+    loop {
+      if self.closed { return; } // Exit the loop if closed
+      let { ok, value, err } = self.jttp.receive(()); // Read incoming messages
+      if not ok {
+        self.on_error(err);
+      } else {
+        self.on_message_raw(value);
+        let { host, message } = value;
+        if message.__close__ {
+          self.on_close(host, message);
+          return value;
+        }
+        self.on_message(message, host);
+      }
+    }
+  }
+
+  /// Sends the exit signal to the peer, stops the loop.
+  fn close(self) {
+    self.write({ __close__: true });
+    self.closed = true;
+    self.on_close();
+  }
+
+  /// Write to the peer. Panics if the socket is not connected, or closed.
+  fn write(self, message) {
+    if self.closed or not self.connected {
+      panic("Socket is closed");
+    }
+    self.jttp.send(self.host, message);
+  }
+
+  /* Handlers, override them. */
+  fn on_message(self, message, host) {}
+  fn on_message_raw(self, payload) {}
+  fn on_connect(self) {}
+  fn on_close(self, host, message) {}
+  fn on_error(self, cause) {}
+}
+
+/// Servers will listen to incoming messages.
+///
+/// They will handle acknowledgment target messages by default.
+class SocketServer {
+  fn new(protocol, side) {
+    let jttp = Jttp::open(protocol, side);
+    return SocketServer { jttp, protocol };
+  }
+  fn on_bad_message(self, err) { /* Just discard bad messages, can be overriden. */ }
+  fn listen(self, callback) {
+    let clients = {};
+    loop {
+      let { ok, value, err } = self.jttp.receive(());
+      if ok {
+        if value.message.__ack__ {
+          self.jttp.send(value.host, {
+            __ack__: true,
+            host: os::computerID()
+          });
+          let client = Socket::new(self.protocol);
+          client.connected = true;
+          client.host = value.host;
+          client.on_close = () => {
+            self.on_client_closing(client);
+            client.connected = false;
+            client.closed = true;
+            clients[value.host] = ();
+          };
+          clients[value.host] = client;
+          callback(client, self.jttp);
+        } else if value.message.__close__ and clients[value.host] <> () {
+          clients[value.host].on_close();
+        } else {
+          if clients[value.host] <> () {
+            clients.on_message(value.message, value.host);
+          }
+        }
+      } else {
+        self.on_bad_message(err);
+      }
+    }
+  }
+
+  /* Extra events */
+  fn on_client_closing(self, client) {}
+}
+
+return { Socket, SocketServer, Jttp };
