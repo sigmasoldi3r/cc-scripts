@@ -1,0 +1,170 @@
+let { capture, panic } = require("monody");
+
+/// Color OOP abstraction.
+class Color {
+  fn new(value) {
+    return Color { value, blit_value: colors::toBlit(value) };
+  }
+  fn as_blit(self, width) {
+    return self.blit_value.rep(width);
+  }
+}
+let COLOR_TABLE = {
+  white: true,
+  orange: true,
+  magenta: true,
+  lightBlue: true,
+  yellow: true,
+  lime: true,
+  pink: true,
+  gray: true,
+  lightGray: true,
+  cyan: true,
+  purple: true,
+  blue: true,
+  brown: true,
+  green: true,
+  red: true,
+  black: true
+};
+for name in pairs(COLOR_TABLE) {
+  Color[name] = Color::new(colors[name]);
+}
+
+/// A screen buffer abstraction, tailored to Lark uses.
+class Buffer {
+  fn from(term) {
+    let buf = Buffer { term };
+    buf.resize();
+    return buf;
+  }
+
+  /// Clears and adjusts the buffer value to the new terminal size.
+  /// WARNING: Invalidates the old buffer contents!
+  fn resize(self) {
+    let size = capture(self.term::getSize());
+    let data = [];
+    let row = 1;
+    while row <= size._1 {
+      data[row] = {
+        bg: colors::toBlit(colors.black).rep(size._0),
+        fg: colors::toBlit(colors.white).rep(size._0),
+        value: (" ").rep(size._0)
+      };
+      row += 1;
+    }
+    self.data = data;
+  }
+
+  /// Clones this buffer and returns the new copy.
+  fn copy(self) {
+    let other = [];
+    for row in pairs(self.data) {
+      let rval = self.data[row];
+      other[row] = {
+        bg: rval.bg,
+        fg: rval.fg,
+        value: rval.value
+      };
+    }
+    return Buffer { term: self.term, data: other };
+  }
+}
+
+fn place(str, offset, value) {
+  let len = str.len();
+  let i = 1;
+  let out = "";
+  while i <= len {
+    if (i - offset) > 0 {
+      let to_sub = value.sub(i - offset, i - offset);
+      if to_sub.len() > 0 {
+        out = out ++ to_sub;
+      } else {
+        out = out ++ str.sub(i, i);
+      }
+    } else {
+      out = out ++ str.sub(i, i);
+    }
+    i += 1;
+  }
+  return out;
+}
+
+/// Lark is a HAL for terminals in ComputerCraft mod.
+///
+/// This abstraction layer will speed up the render times
+/// by just swapping buffers, like OpenGL/Vulkan/etc does.
+class Lark {
+  fn new(term) {
+    return Lark {
+      term,
+      clear_color: Color.black,
+      buffer: Buffer::from(term)
+    };
+  }
+
+  /// Clears the buffer contents. Does not present the result.
+  /// This function is internally used when swapping, be careful.
+  fn invalidate_buffer(self) {
+    let size = capture(self.term::getSize());
+    for row in pairs(self.buffer.data) {
+      self.buffer.data[row] = {
+        bg: self.clear_color.blit_value.rep(size._0),
+        fg: colors::toBlit(colors.white).rep(size._0),
+        value: (" ").rep(size._0)
+      };
+    }
+  }
+
+  /// Fills the buffer with a rectangle of the given properties.
+  fn rect(self, pos, size, bg, char, fg) {
+    fg = fg ?? Color.white;
+    char = char ?? " ";
+    bg = bg ?? Color.red;
+    size = size ?? (1, 1);
+    pos = pos ?? (1, 1);
+    let i = pos._1;
+    while i < pos._1 + size._1 {
+      let data = self.buffer.data[i];
+      if data == () {
+        panic("Buffer overflow: " ++ i ++ " not a row!");
+      }
+      data.value = place(data.value, pos._0 - 1, (char).rep(size._0));
+      data.fg = place(data.fg, pos._0 - 1, fg.blit_value.rep(size._0));
+      data.bg = place(data.bg, pos._0 - 1, bg.blit_value.rep(size._0));
+      i += 1;
+    }
+  }
+
+  fn text(self, pos, text, color) {
+    pos = pos ?? (1, 1);
+    text = text ?? "<text>";
+    color = color ?? Color.black;
+    let len = text.len();
+    let data = self.buffer.data[pos._1];
+    data.value = place(data.value, pos._0, text);
+    data.fg = place(data.fg, pos._0, color.blit_value.rep(len));
+  }
+
+  /// Swaps the old buffer for a new one, clearing the content values.
+  ///
+  /// Returns the old buffer value, in case that you need to store it.
+  fn swap(self) {
+    for row in pairs(self.buffer.data) {
+      let rval = self.buffer.data[row];
+      self.term::setCursorPos(1, row);
+      self.term::blit(rval.value, rval.fg, rval.bg);
+    }
+    self.invalidate_buffer();
+    return copy;
+  }
+
+  fn get_screen_size(self) {
+    return capture(self.term::getSize());
+  }
+}
+
+Lark.Color = Color;
+
+return Lark;
