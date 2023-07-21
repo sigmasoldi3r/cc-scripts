@@ -1,0 +1,40 @@
+/*
+  Enquirer is a saturnus semi-port of NPM's Enquirer module.
+  Use it to ask interactively to the user.
+*/
+let { Result, const } = require("monody");
+
+let True = const(true);
+
+fn ask(message, check, transform) {
+  transform = transform or identity;
+  check = check ?? True;
+  term::write(message);
+  term::write(" ");
+  let value = read();
+  if check(value) {
+    return Result::ok(transform(value));
+  }
+  return Result::err("Invalid value");
+}
+
+fn prompt(message, check, transform) {
+  let value = ();
+  loop {
+    value = ask(message, check, transform);
+    if value.ok {
+      return value.value;
+    }
+    term::clearLine();
+    term::write(value.err);
+    term::write(", ");
+  }
+}
+
+fn is_number(value) {
+  return type(tonumber(value)) == "number";
+}
+
+return {
+  ask, prompt, is_number
+};
