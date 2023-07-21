@@ -1,0 +1,54 @@
+// Lyre is a simple program for developers
+// prints out the special character escape codes,
+// so you can use them like string.char(128); or
+// my "stringy \192 value";
+
+fn cpt(w, h) {
+  return { w, h };
+}
+
+fn try(func) {
+  let f = (ok, data) => {ok, data};
+  return f(pcall(func));
+}
+
+let size = cpt(term::getSize());
+let cols = math::floor(size.w / 6);
+
+let lines = [];
+let i = 0;
+let exit = false;
+loop {
+  let j = 0;
+  let segments = [];
+  while j < cols {
+    let r = tostring(i);
+    if i < 10 {
+      r = "00" ++ r;
+    } else if i < 100 {
+      r = "0" ++ r;
+    }
+    let result = try(() => string::char(i));
+    let ok = result.ok;
+    let ch = result.data;
+    if not ok {
+      exit = true;
+      break;
+    }
+    if ch == "\n" {
+      ch = " ";
+    }
+    segments[#?segments+1] = ch ++ " " ++ r;
+    j += 1;
+    i += 1;
+  }
+  lines[#?lines+1] = table::concat(segments, " ");
+  if exit {
+    break;
+  }
+}
+
+let text = table::concat(lines, "\n");
+let pos = cpt(term::getCursorPos());
+textutils::pagedPrint(text, pos.h - 2);
+// print(text);
