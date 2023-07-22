@@ -32,5 +32,7 @@ jobs:
       with:
         deno-version: v1.x
     - name: Publish the artifacts
+      env:
+        GIST_DEPLOY_KEY: ${{ secrets.GIST_DEPLOY_KEY }}
       run: |
-        deno run --allow-net=* --allow-read --allow-env .github/deploy/deploy.js "${{secrets.GIST_DEPLOY_KEY}}"
+        deno run --allow-net=* --allow-read --allow-env .github/deploy/deploy.js
