@@ -1,0 +1,22 @@
+/*
+  This simple CLI program is a simple installer for the latest versions of
+  Grabby and Monody packages.
+
+  It is standalone, and aims to be that way.
+*/
+fn grab(from, name) {
+  write("Downloading " ++ from ++ "...");
+  let res = http::get(from);
+  let source = res::readAll();
+  res::close();
+  write("OK! Write...");
+  let file = io::open(name, "w");
+  file.write(source);
+  file.close();
+  print("OK -> " ++ name);
+  return true;
+}
+
+grab("https://raw.githubusercontent.com/sigmasoldi3r/cc-scripts/main/grabby.saturn", "grabby.lua");
+grab("https://raw.githubusercontent.com/sigmasoldi3r/cc-scripts/main/monody.saturn", "monody.lua");
+print("Done!");
