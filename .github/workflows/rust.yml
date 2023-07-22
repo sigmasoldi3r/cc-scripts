@@ -17,7 +17,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Install Saturnus
-      run: cargo install --git git@github.com:sigmasoldi3r/Saturnus.git
+      run: cargo install --git https://github.com/sigmasoldi3r/cc-scripts.git
     - name: Run the compiler
       run: |
        saturn -c commander.saturn
