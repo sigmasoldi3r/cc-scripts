@@ -20,13 +20,13 @@ jobs:
       run: cargo install --git https://github.com/sigmasoldi3r/Saturnus.git saturnus
     - name: Run the compiler
       run: |
-       saturn -c commander.saturn
-       saturn -c enquirer.saturn
-       saturn -c grabby.saturn
-       saturn -c lark.saturn
-       saturn -c lyre.saturn
-       saturn -c monody.saturn
-       saturn -c netpipe.saturn
-       saturn -c robot.saturn
+       saturnus -c commander.saturn
+       saturnus -c enquirer.saturn
+       saturnus -c grabby.saturn
+       saturnus -c lark.saturn
+       saturnus -c lyre.saturn
+       saturnus -c monody.saturn
+       saturnus -c netpipe.saturn
+       saturnus -c robot.saturn
     - name: Publish the artifacts
       run: echo "Not implemented yet" && exit -1
