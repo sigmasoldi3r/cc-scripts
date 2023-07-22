@@ -33,4 +33,4 @@ jobs:
         deno-version: v1.x
     - name: Publish the artifacts
       run: |
-        deno run --allow-net=* --allow-read=* --allow-env .github/deploy/deploy.js
+        deno run --allow-net=* --allow-read --allow-env .github/deploy/deploy.js
