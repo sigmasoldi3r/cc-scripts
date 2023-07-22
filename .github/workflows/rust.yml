@@ -28,12 +28,9 @@ jobs:
        saturnus -c monody.saturn
        saturnus -c netpipe.saturn
        saturnus -c robot.saturn
+    - uses: denoland/setup-deno@v1
+      with:
+        deno-version: v1.x
     - name: Publish the artifacts
       run: |
-        curl -L \
-          -X PATCH \
-          -H "Accept: application/vnd.github+json" \
-          -H "Authorization: Bearer ${{ secrets.gist_deploy_key }}" \
-          -H "X-GitHub-Api-Version: 2022-11-28" \
-          https://api.github.com/gists/5a71c8a4343a0736236b49c81a80d495 \
-          -d '{"files":{"commander.lua":{"content":"'"$(cat commander.lua)"'"}}}'
+        deno .github/deploy/deploy.js
