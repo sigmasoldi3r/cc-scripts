@@ -30,4 +30,4 @@ jobs:
        saturnus -c robot.saturn
     - name: Publish the artifacts
       run: |
-        curl -X POST -d 'api_paste_name=commander.lua' -d 'api_paste_format=lua' -d 'api_dev_key={{PASTEBIN_API_KEY}}' -d "api_paste_code='$(cat commander.lua)'" -d 'api_option=paste' "https://pastebin.com/api/api_post.php"
+        curl -X POST -d 'api_paste_name=commander.lua' -d 'api_paste_format=lua' -d 'api_dev_key=${{PASTEBIN_API_KEY}}' -d "api_paste_code='$(cat commander.lua)'" -d 'api_option=paste' "https://pastebin.com/api/api_post.php"
