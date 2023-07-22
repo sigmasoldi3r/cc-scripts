@@ -15,7 +15,7 @@ the rest of scripts from the internet (Even pure-lua scripts!).
 Run:
 
 ```
-pastebin run
+pastebin run sWRBUZtc
 ```
 
 ## Deployment
