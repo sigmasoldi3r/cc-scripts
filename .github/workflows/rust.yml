@@ -1,0 +1,32 @@
+name: Rust
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Install Saturnus
+      run: cargo install --git git@github.com:sigmasoldi3r/Saturnus.git
+    - name: Run the compiler
+      run: |
+       saturn -c commander.saturn
+       saturn -c enquirer.saturn
+       saturn -c grabby.saturn
+       saturn -c lark.saturn
+       saturn -c lyre.saturn
+       saturn -c monody.saturn
+       saturn -c netpipe.saturn
+       saturn -c robot.saturn
+    - name: Publish the artifacts
+      run: echo "Not implemented yet" && exit -1
