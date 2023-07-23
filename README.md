@@ -51,3 +51,11 @@ let super_lib = require("pastebin:iex4Tgeb");
 
 But I advise to use only `grab` function, as it is more clear.
 
+## Compiled sources
+
+The CI compiles the sources to Lua automagically, and drops them in a few gists (So you can just grab'em, like pastebin):
+
+- [Commander Gist 5a71c8a4343a0736236b49c81a80d495](https://gist.github.com/sigmasoldi3r/5a71c8a4343a0736236b49c81a80d495)
+- [Monody Gist bd42d6de0aa0477ae9e8f1b93943b059](https://gist.github.com/sigmasoldi3r/bd42d6de0aa0477ae9e8f1b93943b059)
+- [Grabby Gist 353b108f06e24dd8d70317b51117c349](https://gist.github.com/sigmasoldi3r/353b108f06e24dd8d70317b51117c349)
+
