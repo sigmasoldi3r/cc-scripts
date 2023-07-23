@@ -17,6 +17,6 @@ fn grab(from, name) {
   return true;
 }
 
-grab("https://raw.githubusercontent.com/sigmasoldi3r/cc-scripts/main/grabby.saturn", "grabby.lua");
-grab("https://raw.githubusercontent.com/sigmasoldi3r/cc-scripts/main/monody.saturn", "monody.lua");
+grab("https://gist.githubusercontent.com/sigmasoldi3r/353b108f06e24dd8d70317b51117c349/raw/2aa512377fd2bbf388e71b905ed815ecd0cbd1b0/grabby.lua", "grabby.lua");
+grab("https://gist.githubusercontent.com/sigmasoldi3r/bd42d6de0aa0477ae9e8f1b93943b059/raw/071f41389bd9424f490ae4684498f6b1b500241e/monody.lua", "monody.lua");
 print("Done!");
