@@ -5,24 +5,20 @@ const octokit = new Octokit({
   auth: Deno.env.get("GIST_DEPLOY_KEY")
 })
 
-async function cFile(where) {
-  return { [where]: { content: await Deno.readTextFile(where) } }
+async function push(target, gist_id) {
+  await octokit.request('PATCH /gists/{gist_id}', {
+    gist_id,
+    description: 'Latest deploy of ' + target.replace(/\.lua/, '').replace(/^./, s => s.toUpperCase()),
+    files: {
+      [target]: {
+        content: await Deno.readTextFile(target)
+      }
+    },
+    headers: {
+      'X-GitHub-Api-Version': '2022-11-28'
+    }
+  })
 }
-
-await octokit.request('PATCH /gists/{gist_id}', {
-  gist_id: '5a71c8a4343a0736236b49c81a80d495',
-  description: 'Latest deploy of the CC libraries',
-  files: {
-    ...cFile('commander.lua'),
-    ...cFile('enquirer.lua'),
-    ...cFile('monody.lua'),
-    ...cFile('grabby.lua'),
-    ...cFile('lyre.lua'),
-    ...cFile('lark.lua'),
-    ...cFile('netpipe.lua'),
-    ...cFile('robot.lua'),
-  },
-  headers: {
-    'X-GitHub-Api-Version': '2022-11-28'
-  }
-})
+await push('commander.lua', '5a71c8a4343a0736236b49c81a80d495')
+await push('monody.lua', 'bd42d6de0aa0477ae9e8f1b93943b059')
+await push('grabby.lua', '353b108f06e24dd8d70317b51117c349')
