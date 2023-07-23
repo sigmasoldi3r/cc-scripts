@@ -67,6 +67,8 @@ let http_solver = HttpSolver::new();
 let github_solver = GithubSolver::new();
 let pastebin_solver = PastebinSolver::new();
 
+let __require = require;
+
 /// Grabs the library, without any hassle.
 ///
 /// Will try to resolve the imported module, depending on the
@@ -79,8 +81,13 @@ fn grab(source) {
   } else if pastebin_solver.is_valid(source) {
     return pastebin_solver.resolve(source);
   } else {
-    return require(source);
+    return __require(source);
   }
 }
 
-return { grab };
+fn global() {
+  require = grab;
+  return __require;
+}
+
+return { grab, require: grab, G: global, __require };
