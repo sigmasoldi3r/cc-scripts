@@ -22,3 +22,4 @@ async function push(target, gist_id) {
 await push('commander.lua', '5a71c8a4343a0736236b49c81a80d495')
 await push('monody.lua', 'bd42d6de0aa0477ae9e8f1b93943b059')
 await push('grabby.lua', '353b108f06e24dd8d70317b51117c349')
+Deno.exit(0)
