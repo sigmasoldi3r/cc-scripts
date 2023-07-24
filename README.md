@@ -31,12 +31,12 @@ let Commander = grab("https://gist.github.com/sigmasoldi3r/5a71c8a4343a0736236b4
 
 ## Grabby: Usage
 
-The idea is that every commit to main, will publish the script to given pastebin
-links, and then you can always grab the latest simply by:
+The idea is that every commit to main, will publish the changes to
+github gist links, and then you can always grab the latest like this:
 
 ```rs
 let { grab } = require("grabby");
-let super_lib = grab("pastebin:iex4Tgeb");
+let super_lib = grab("pastebin:iex4Tgeb"); // This is just to illustrate the usage
 ```
 
 Alternative use, altough you should avoid it, if possible:
@@ -56,7 +56,8 @@ let { require } = require("grabby");
 let super_lib = require("pastebin:iex4Tgeb");
 ```
 
-But I advise to use only `grab` function, as it is more clear.
+But I advise to use only `grab` function, as it is more clear that your code depends on
+_Grabby_ to run properly.
 
 ## Compiled sources
 
