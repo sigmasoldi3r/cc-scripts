@@ -14,17 +14,22 @@ the rest of scripts from the internet (Even local scripts!).
 
 Oh you may use `grabby.grab()` if you're programming in Lua.
 
-You can also use the `require` alt name in order to replace your scripts, and even,
-if wanted the `G()` function, like: `require('grabby')::G();`. That will replace the
-global `require` function, if desired.
-
 Run:
 
 ```
 pastebin run sWRBUZtc
 ```
 
-## Deployment
+## Getting the scripts
+
+Links will be published here as they are deployed.
+
+```rs
+// Getting "commander"
+let Commander = grab("https://gist.github.com/sigmasoldi3r/5a71c8a4343a0736236b49c81a80d495");
+```
+
+## Grabby: Usage
 
 The idea is that every commit to main, will publish the script to given pastebin
 links, and then you can always grab the latest simply by:
@@ -34,9 +39,11 @@ let { grab } = require("grabby");
 let super_lib = grab("pastebin:iex4Tgeb");
 ```
 
-The links will be published here.
+Alternative use, altough you should avoid it, if possible:
 
-ALTERNATIVE:
+You can also use the `require` alt name in order to replace your scripts, and even,
+if wanted the `G()` function, like: `require('grabby')::G();`. That will replace the
+global `require` function, if desired.
 
 ```rs
 require("grabby")::G();
