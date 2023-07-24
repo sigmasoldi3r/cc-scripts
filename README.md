@@ -26,7 +26,7 @@ Links will be published here as they are deployed.
 
 ```rs
 // Getting "commander"
-let Commander = grab("https://gist.github.com/sigmasoldi3r/5a71c8a4343a0736236b49c81a80d495");
+let Commander = grab("https://gist.githubusercontent.com/sigmasoldi3r/5a71c8a4343a0736236b49c81a80d495/raw/80f5f95c2d609181f8c1ab5daca21415b14d450a/commander.lua");
 ```
 
 ## Grabby: Usage
