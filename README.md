@@ -1,15 +1,17 @@
 # ComputerCraft Scripts
 
-> **Warn**
-> 
+> [!WARNING] 
 > This repository is currently deprecated and the sources outdated according
 > to the latest version of [Saturnus](https://github.com/sigmasoldi3r/Saturnus).
->
+
+> [!IMPORTANT] 
 > This means that you cannot longer compile those sources. With the new advent of
 > the Janus build system, scripts will be simpler.
-> 
+
+> [!TIP]
 > Open an issue if you're using some of those scripts and you want to revive them.
->
+
+> [!NOTE]
 > If not, I'll may update them soon (Today is december the 16th of 2023) if I start
 > a server again with my friends.
 
