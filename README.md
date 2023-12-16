@@ -1,5 +1,17 @@
 # ComputerCraft Scripts
 
+> **Warning**
+> This repository is currently deprecated and the sources outdated according
+> to the latest version of [Saturnus](https://github.com/sigmasoldi3r/Saturnus).
+>
+> This means that you cannot longer compile those sources. With the new advent of
+> the Janus build system, scripts will be simpler.
+> 
+> Open an issue if you're using some of those scripts and you want to revive them.
+>
+> If not, I'll may update them soon (Today is december the 16th of 2023) if I start
+> a server again with my friends.
+
 A simple computercraft monorepo, with the scripts that currently are working in some
 computers and turtles at my server, The Conundrum v1.5.0 (Aka The Nightwalk). Drop a
 message in the forums if you want to join in.
