@@ -1,6 +1,6 @@
 # ComputerCraft Scripts
 
-> **Warning**
+> **Warn**
 > 
 > This repository is currently deprecated and the sources outdated according
 > to the latest version of [Saturnus](https://github.com/sigmasoldi3r/Saturnus).
